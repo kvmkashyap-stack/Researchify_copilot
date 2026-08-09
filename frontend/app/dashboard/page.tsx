@@ -306,21 +306,19 @@ export default function DashboardPage() {
 
       if (res.ok) {
         const data = await res.json();
-        let finalMessages: ChatMessage[] = [];
         setMessages((m) => {
           const updated = m.map((msg) => 
             msg.id === thinkingId 
               ? { id: msg.id, role: "assistant", content: data.response }
               : msg
           );
-          finalMessages = updated;
           localStorage.setItem(`chat_history_${currentSessionId}`, JSON.stringify(updated));
           return updated;
         });
 
         // Update titles optimistically
         setSessions((prev) => {
-          let updated = [...prev];
+          const updated = [...prev];
           const sessionIndex = updated.findIndex((s) => s.session_id === currentSessionId);
           if (sessionIndex !== -1 && updated[sessionIndex].title === "New Chat") {
             const displayTitle = text.slice(0, 40) + (text.length > 40 ? "..." : "");
