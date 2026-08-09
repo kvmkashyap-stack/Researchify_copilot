@@ -5,7 +5,11 @@ from pathlib import Path
 from datetime import datetime
 
 # Local file fallback path
-_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+import os
+if "VERCEL" in os.environ:
+    _DATA_DIR = Path("/tmp")
+else:
+    _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 _MSG_FILE = _DATA_DIR / "local_messages.json"
 _TITLES_FILE = _DATA_DIR / "session_titles.json"
 

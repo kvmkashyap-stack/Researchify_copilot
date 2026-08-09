@@ -18,7 +18,10 @@ from app.core.security import (
 # Initialize router here so app/main.py can import it successfully
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
+if "VERCEL" in os.environ:
+    UPLOAD_DIR = "/tmp/uploads"
+else:
+    UPLOAD_DIR = "uploads"
 
 os.makedirs(
     UPLOAD_DIR,

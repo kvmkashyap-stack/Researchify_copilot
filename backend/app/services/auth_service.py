@@ -14,7 +14,11 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Local file fallback path
-_DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+import os
+if "VERCEL" in os.environ:
+    _DATA_DIR = Path("/tmp")
+else:
+    _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 _USERS_FILE = _DATA_DIR / "local_users.json"
 
 
