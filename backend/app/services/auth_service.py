@@ -47,8 +47,26 @@ def _find_local_user(email: str) -> Optional[dict]:
     return None
 
 
-# In-memory dictionary for pending registrations
-pending_registrations = {}
+_PENDING_FILE = _DATA_DIR / "pending_regs.json"
+
+
+def _ensure_pending_storage():
+    _ensure_local_storage()
+    if not _PENDING_FILE.exists():
+        _PENDING_FILE.write_text("{}")
+
+
+def _get_pending_registrations() -> dict:
+    _ensure_pending_storage()
+    try:
+        return json.loads(_PENDING_FILE.read_text())
+    except Exception:
+        return {}
+
+
+def _save_pending_registrations(data: dict):
+    _ensure_pending_storage()
+    _PENDING_FILE.write_text(json.dumps(data, indent=2))
 
 
 def generate_otp() -> str:
@@ -58,11 +76,12 @@ def generate_otp() -> str:
 def send_register_otp(email: str, password: str):
     """
     Checks if a user exists. If not, generates an OTP, stores the registration state
-    temporarily in memory, and triggers email delivery.
+    and sends the OTP via email (or prints it for dev/fallback).
     """
     email = email.strip().lower()
-    user_exists = False
 
+    # Check if user already exists
+    user_exists = False
     if supabase:
         try:
             existing = (
@@ -70,11 +89,12 @@ def send_register_otp(email: str, password: str):
             )
             if existing.data and len(existing.data) > 0:
                 user_exists = True
-        except Exception:
-            if _find_local_user(email):
-                user_exists = True
-    else:
-        if _find_local_user(email):
+        except Exception as e:
+            logger.warning(f"Supabase connection check failed, using local fallback: {str(e)}")
+
+    if not user_exists:
+        local_user = _find_local_user(email)
+        if local_user:
             user_exists = True
 
     if user_exists:
@@ -93,11 +113,13 @@ def send_register_otp(email: str, password: str):
     otp = generate_otp()
     expires_at = time.time() + 600  # 10 minutes expiry
 
-    pending_registrations[email] = {
+    pending_regs = _get_pending_registrations()
+    pending_regs[email] = {
         "hashed_password": hashed_password,
         "otp": otp,
         "expires_at": expires_at,
     }
+    _save_pending_registrations(pending_regs)
 
     try:
         send_otp_email(email, otp)
@@ -116,16 +138,19 @@ def verify_register_otp(email: str, otp: str):
     """
     email = email.strip().lower()
 
-    if email not in pending_registrations:
+    pending_regs = _get_pending_registrations()
+    if email not in pending_regs:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No pending registration found for this email. Please request a new OTP.",
         )
 
-    pending = pending_registrations[email]
+    pending = pending_regs[email]
 
     if time.time() > pending["expires_at"]:
-        del pending_registrations[email]
+        if email in pending_regs:
+            del pending_regs[email]
+            _save_pending_registrations(pending_regs)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The OTP code has expired. Please request a new one.",
@@ -156,7 +181,10 @@ def verify_register_otp(email: str, otp: str):
         _save_local_users(users)
 
     # Clean up pending session
-    del pending_registrations[email]
+    pending_regs = _get_pending_registrations()
+    if email in pending_regs:
+        del pending_regs[email]
+        _save_pending_registrations(pending_regs)
 
     # Create session token and log in directly
     token = create_access_token({"sub": email})
