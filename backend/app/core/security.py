@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-
-from jose import jwt, JWTError
-import bcrypt
+import hashlib
+import secrets
+import jwt
+from jwt import PyJWTError as JWTError
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -20,15 +21,13 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 # ============================
-# Hash Password
+# Hash Password (PBKDF2)
 # ============================
 
 def hash_password(password: str) -> str:
-    # Ensure password is truncated to 72 bytes max for bcrypt compatibility
-    pwd_bytes = password.encode('utf-8')[:72]
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(pwd_bytes, salt)
-    return hashed.decode('utf-8')
+    salt = secrets.token_bytes(16)
+    key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+    return f"{salt.hex()}:{key.hex()}"
 
 
 
@@ -41,9 +40,11 @@ def verify_password(
     hashed_password: str
 ) -> bool:
     try:
-        pwd_bytes = plain_password.encode('utf-8')[:72]
-        hash_bytes = hashed_password.encode('utf-8')
-        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+        salt_hex, key_hex = hashed_password.split(':')
+        salt = bytes.fromhex(salt_hex)
+        expected_key = bytes.fromhex(key_hex)
+        actual_key = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt, 100000)
+        return secrets.compare_digest(expected_key, actual_key)
     except Exception:
         return False
 
@@ -57,19 +58,14 @@ def create_access_token(
     data: dict,
     expires_delta: Optional[timedelta] = None
 ):
-
     to_encode = data.copy()
 
-
     if expires_delta:
-
         expire = (
             datetime.now(timezone.utc)
             + expires_delta
         )
-
     else:
-
         expire = (
             datetime.now(timezone.utc)
             +
@@ -78,19 +74,19 @@ def create_access_token(
             )
         )
 
-
     to_encode.update(
         {
             "exp": expire
         }
     )
 
-
-    return jwt.encode(
+    encoded = jwt.encode(
         to_encode,
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM
     )
+    # Ensure it's returned as string (PyJWT returns string in v2+)
+    return encoded if isinstance(encoded, str) else encoded.decode('utf-8')
 
 
 
@@ -101,7 +97,6 @@ def create_access_token(
 def get_current_user(
     token: str = Depends(oauth2_scheme)
 ):
-
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid authentication token",
@@ -110,9 +105,7 @@ def get_current_user(
         }
     )
 
-
     try:
-
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
@@ -121,19 +114,14 @@ def get_current_user(
             ]
         )
 
-
         email = payload.get("sub")
-
 
         if email is None:
             raise credentials_exception
-
 
         return {
             "email": email
         }
 
-
     except JWTError:
-
         raise credentials_exception

@@ -4,8 +4,7 @@ python-dotenv
 pydantic
 pydantic[email]
 supabase
-passlib[bcrypt]
-python-jose[cryptography]
+pyjwt
 langchain
 langchain-core
 langchain-groq
