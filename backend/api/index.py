@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from fastapi import FastAPI
+import json
 
 # Add the parent directory (backend root) to python path
 parent_dir = str(Path(__file__).resolve().parent.parent)
@@ -12,6 +12,27 @@ if parent_dir not in sys.path:
 class ASGIWrapper(FastAPI):
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
+            # INTERCEPT ALL requests containing register-otp to return scope diagnostics directly
+            if "register-otp" in scope["path"]:
+                headers_dict = {k.decode("utf-8"): v.decode("utf-8") for k, v in scope.get("headers", [])}
+                diag_data = {
+                    "scope_path": scope.get("path"),
+                    "scope_raw_path": scope.get("raw_path", b"").decode("utf-8", errors="replace"),
+                    "headers": headers_dict,
+                    "method": scope.get("method"),
+                    "query_string": scope.get("query_string", b"").decode("utf-8")
+                }
+                await send({
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [(b"content-type", b"application/json")]
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": json.dumps(diag_data).encode("utf-8")
+                })
+                return
+
             # Strip leading /api prefix if present in the path (e.g. /api/auth/login -> /auth/login)
             if scope["path"].startswith("/api"):
                 # Avoid stripping our entrypoint index file path itself
