@@ -44,7 +44,9 @@ try:
                 })
                 return
 
-            # Intercept and fix path if x-matched-path is sent by Vercel
+            # Print scope for debugging Vercel routing headers
+            print("DEBUG ASGI SCOPE:", scope)
+
             headers = dict(scope.get("headers", []))
             matched_path = headers.get(b"x-matched-path")
             if matched_path:
