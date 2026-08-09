@@ -94,13 +94,17 @@ class SimpleVectorStore:
 # Initialize Embeddings
 # =====================================
 
-try:
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-except Exception:
+if "VERCEL" in os.environ:
+    # Force serverless fallback on Vercel to avoid heavy model downloads & memory overhead on startup
     embeddings = HuggingFaceInferenceEmbeddings()
+else:
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+    except Exception:
+        embeddings = HuggingFaceInferenceEmbeddings()
 
 
 # =====================================
@@ -109,17 +113,23 @@ except Exception:
 
 vector_store = None
 
-try:
-    from langchain_community.vectorstores import FAISS
-    def create_vector_store(documents):
-        global vector_store
-        vector_store = FAISS.from_documents(documents, embeddings)
-        return vector_store
-except Exception:
+if "VERCEL" in os.environ:
     def create_vector_store(documents):
         global vector_store
         vector_store = SimpleVectorStore.from_documents(documents, embeddings)
         return vector_store
+else:
+    try:
+        from langchain_community.vectorstores import FAISS
+        def create_vector_store(documents):
+            global vector_store
+            vector_store = FAISS.from_documents(documents, embeddings)
+            return vector_store
+    except Exception:
+        def create_vector_store(documents):
+            global vector_store
+            vector_store = SimpleVectorStore.from_documents(documents, embeddings)
+            return vector_store
 
 
 def load_pdf(file_path: str):
