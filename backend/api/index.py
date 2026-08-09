@@ -10,7 +10,7 @@ if parent_dir not in sys.path:
 
 try:
     from app.main import app
-except Exception as e:
+except BaseException as e:
     tb_str = traceback.format_exc()
     print("STARTUP ERROR:", tb_str)
     
