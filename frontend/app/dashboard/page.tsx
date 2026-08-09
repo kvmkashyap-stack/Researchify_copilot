@@ -125,6 +125,7 @@ export default function DashboardPage() {
     setTimeout(() => {
       loadSessions();
     }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

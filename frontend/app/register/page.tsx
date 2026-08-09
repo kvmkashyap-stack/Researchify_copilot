@@ -355,7 +355,7 @@ export default function RegisterPage() {
                 onClick={() => handleSendOtp({ preventDefault: () => {} } as React.FormEvent)}
                 className="text-sm text-cyan-400 hover:text-cyan-300 hover:underline transition mt-3 text-center w-full"
               >
-                Didn't receive the code? Resend
+                Didn&apos;t receive the code? Resend
               </button>
             </form>
           )}
