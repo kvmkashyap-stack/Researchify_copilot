@@ -36,12 +36,32 @@ def _save_local_messages(msgs):
     _MSG_FILE.write_text(json.dumps(msgs, indent=2))
 
 
-def _get_custom_titles():
+import logging
+logger = logging.getLogger(__name__)
+
+def _get_custom_titles(user_email: str = None) -> dict:
+    titles = {}
+    if supabase and user_email:
+        try:
+            resp = supabase.table("session_titles").select("session_id, title").eq("user_email", user_email).execute()
+            if resp.data:
+                for row in resp.data:
+                    titles[f"{user_email}:{row['session_id']}"] = row['title']
+        except Exception as e:
+            logger.warning(f"Failed to load custom titles from Supabase: {str(e)}")
+
     _ensure_titles_storage()
     try:
-        return json.loads(_TITLES_FILE.read_text())
+        local_titles = json.loads(_TITLES_FILE.read_text())
+        for k, v in local_titles.items():
+            if user_email:
+                if k.startswith(f"{user_email}:"):
+                    titles[k] = v
+            else:
+                titles[k] = v
     except Exception:
-        return {}
+        pass
+    return titles
 
 
 def _save_custom_titles(titles):
@@ -50,10 +70,25 @@ def _save_custom_titles(titles):
 
 
 def rename_session(user_email: str, session_id: str, new_title: str):
-    titles = _get_custom_titles()
-    key = f"{user_email}:{session_id}"
-    titles[key] = new_title
-    _save_custom_titles(titles)
+    if supabase:
+        try:
+            supabase.table("session_titles").upsert({
+                "user_email": user_email,
+                "session_id": session_id,
+                "title": new_title
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Failed to save custom title to Supabase: {str(e)}")
+
+    # Also save locally as fallback
+    try:
+        _ensure_titles_storage()
+        local_titles = json.loads(_TITLES_FILE.read_text())
+        key = f"{user_email}:{session_id}"
+        local_titles[key] = new_title
+        _save_custom_titles(local_titles)
+    except Exception:
+        pass
 
 
 
@@ -158,7 +193,7 @@ def get_sessions(user_email: str):
 
 def _format_sessions_from_rows(rows, user_email: str):
     # Groups rows by session_id and extracts the first message as title
-    custom_titles = _get_custom_titles()
+    custom_titles = _get_custom_titles(user_email)
     sessions_dict = {}
     
     for r in rows:
@@ -199,13 +234,20 @@ def _format_sessions_from_rows(rows, user_email: str):
 
 
 def delete_session(user_email: str, session_id: str):
-    # Delete custom title
+    # Delete custom title from Supabase
+    if supabase:
+        try:
+            supabase.table("session_titles").delete().eq("user_email", user_email).eq("session_id", session_id).execute()
+        except Exception:
+            pass
+
+    # Delete custom title from local titles
     try:
-        titles = _get_custom_titles()
+        local_titles = json.loads(_TITLES_FILE.read_text())
         key = f"{user_email}:{session_id}"
-        if key in titles:
-            del titles[key]
-            _save_custom_titles(titles)
+        if key in local_titles:
+            del local_titles[key]
+            _save_custom_titles(local_titles)
     except Exception:
         pass
 
