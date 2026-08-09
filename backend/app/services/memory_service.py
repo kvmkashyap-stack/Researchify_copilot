@@ -1,11 +1,12 @@
 from app.core.supabase import supabase
+from fastapi import HTTPException
 
 import json
 from pathlib import Path
 from datetime import datetime
+import os
 
 # Local file fallback path
-import os
 if "VERCEL" in os.environ:
     _DATA_DIR = Path("/tmp")
 else:
@@ -110,8 +111,9 @@ def save_message(user_email: str, role: str, message: str, session_id: str = "de
                 }).execute()
             )
             return response.data
-        except Exception:
-            # Fall back to local file storage below
+        except Exception as e:
+            if "VERCEL" in os.environ:
+                raise HTTPException(status_code=500, detail=f"Database save failed: {str(e)}")
             pass
 
     msgs = _get_local_messages()
@@ -144,8 +146,9 @@ def get_history(user_email: str, session_id: str = "default"):
                 .execute()
             )
             return response.data
-        except Exception:
-            # Fall back to local file storage below
+        except Exception as e:
+            if "VERCEL" in os.environ:
+                raise HTTPException(status_code=500, detail=f"Database fetch failed: {str(e)}")
             pass
 
     msgs = _get_local_messages()
@@ -183,7 +186,9 @@ def get_sessions(user_email: str):
             )
             data = response.data
             return _format_sessions_from_rows(data, user_email)
-        except Exception:
+        except Exception as e:
+            if "VERCEL" in os.environ:
+                raise HTTPException(status_code=500, detail=f"Database fetch sessions failed: {str(e)}")
             pass
 
     msgs = _get_local_messages()

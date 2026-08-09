@@ -79,13 +79,25 @@ export default function DashboardPage() {
 
       if (res.ok) {
         const data = await res.json();
-        // Sync to localStorage
-        localStorage.setItem("chat_sessions", JSON.stringify(data));
-        setSessions(data);
-        if (data.length > 0 && currentSessionId === "default") {
-          const hasDefault = data.some((s: { session_id: string }) => s.session_id === "default");
+        const local = localStorage.getItem("chat_sessions");
+        const merged = [...data];
+
+        if (local) {
+          const localSessions = JSON.parse(local);
+          localSessions.forEach((ls: { session_id: string; title: string }) => {
+            if (!merged.some((s) => s.session_id === ls.session_id)) {
+              merged.push(ls);
+            }
+          });
+        }
+
+        localStorage.setItem("chat_sessions", JSON.stringify(merged));
+        setSessions(merged);
+        
+        if (merged.length > 0 && currentSessionId === "default") {
+          const hasDefault = merged.some((s: { session_id: string }) => s.session_id === "default");
           if (!hasDefault) {
-            setCurrentSessionId(data[0].session_id);
+            setCurrentSessionId(merged[0].session_id);
           }
         }
       } else {
