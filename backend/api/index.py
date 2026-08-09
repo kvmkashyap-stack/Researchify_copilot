@@ -15,15 +15,17 @@ try:
     # Expose custom ASGI wrapper to handle Vercel serverless prefix routing
     async def app(scope, receive, send):
         if scope["type"] == "http":
-            # Intercept debug-echo for instant request info inspection
-            if "debug-echo" in scope["path"]:
-                headers = {k.decode("utf-8"): v.decode("utf-8") for k, v in scope.get("headers", [])}
+            headers_dict = {k.decode("utf-8"): v.decode("utf-8") for k, v in scope.get("headers", [])}
+            query_string = scope.get("query_string", b"").decode("utf-8")
+            
+            # Diagnostic check: return raw scope data immediately if debug flag is present
+            if "x-show-debug" in headers_dict or "x-show-debug" in query_string:
                 diag_data = {
                     "scope_path": scope.get("path"),
                     "scope_raw_path": scope.get("raw_path", b"").decode("utf-8", errors="replace"),
-                    "headers": headers
+                    "headers": headers_dict,
+                    "query_string": query_string
                 }
-                response_body = json.dumps(diag_data).encode("utf-8")
                 await send({
                     "type": "http.response.start",
                     "status": 200,
@@ -31,13 +33,12 @@ try:
                 })
                 await send({
                     "type": "http.response.body",
-                    "body": response_body
+                    "body": json.dumps(diag_data).encode("utf-8")
                 })
                 return
 
             # Strip leading /api prefix if present in the path (e.g. /api/auth/login -> /auth/login)
             if scope["path"].startswith("/api"):
-                # Avoid stripping our entrypoint index file path itself
                 if not scope["path"].startswith("/api/index"):
                     scope["path"] = scope["path"][4:]
                     if not scope["path"]:
