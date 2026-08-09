@@ -44,6 +44,32 @@ def send_otp_email(to_email: str, otp: str):
         </html>
         """
 
+        # 1. Primary check: Use Resend HTTP REST API if API Key is configured (Serverless Friendly)
+        resend_api_key = os.getenv("RESEND_API_KEY")
+        if resend_api_key:
+            import httpx
+            print(f"[EMAIL] Attempting to send email via Resend API to {to_email}...")
+            resp = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "onboarding@resend.dev",
+                    "to": to_email,
+                    "subject": subject,
+                    "html": html_content
+                },
+                timeout=10
+            )
+            if resp.status_code in [200, 201, 202]:
+                print(f"[EMAIL] Successfully sent email via Resend API to {to_email}.")
+                return
+            else:
+                print(f"[WARNING] Resend API returned status {resp.status_code}: {resp.text}. Falling back to SMTP...")
+
+        # 2. Secondary check: Use SMTP over SSL/STARTTLS
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = smtp_sender
@@ -62,4 +88,5 @@ def send_otp_email(to_email: str, otp: str):
         server.quit()
         print(f"[EMAIL] Successfully sent verification email to {to_email}.")
     except Exception as e:
-        print(f"[ERROR] Error sending SMTP email to {to_email}: {str(e)}")
+        print(f"[ERROR] Error sending email to {to_email}: {str(e)}")
+        raise e
