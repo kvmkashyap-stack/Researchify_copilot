@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
+import json
 
 # Add the parent directory (backend root) to python path
 parent_dir = str(Path(__file__).resolve().parent.parent)
@@ -14,6 +15,26 @@ try:
     # Expose custom ASGI wrapper to handle Vercel serverless prefix routing
     async def app(scope, receive, send):
         if scope["type"] == "http":
+            # Intercept debug-echo for instant request info inspection
+            if "debug-echo" in scope["path"]:
+                headers = {k.decode("utf-8"): v.decode("utf-8") for k, v in scope.get("headers", [])}
+                diag_data = {
+                    "scope_path": scope.get("path"),
+                    "scope_raw_path": scope.get("raw_path", b"").decode("utf-8", errors="replace"),
+                    "headers": headers
+                }
+                response_body = json.dumps(diag_data).encode("utf-8")
+                await send({
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [(b"content-type", b"application/json")]
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": response_body
+                })
+                return
+
             # Strip leading /api prefix if present in the path (e.g. /api/auth/login -> /auth/login)
             if scope["path"].startswith("/api"):
                 # Avoid stripping our entrypoint index file path itself
