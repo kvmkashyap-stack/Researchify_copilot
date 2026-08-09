@@ -28,6 +28,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
+class ASGIPrefixMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            if scope["path"].startswith("/api"):
+                # Do not strip the serverless entrypoint script name itself
+                if not scope["path"].startswith("/api/index"):
+                    scope["path"] = scope["path"][4:]
+                    if not scope["path"]:
+                        scope["path"] = "/"
+                    scope["raw_path"] = scope["path"].encode("utf-8")
+        await self.app(scope, receive, send)
+
+app.add_middleware(ASGIPrefixMiddleware)
+
 # CORS - allow frontend dev server
 # Determine allowed origins from settings (comma-separated)
 raw_origins = getattr(settings, "ALLOWED_ORIGINS", "")
