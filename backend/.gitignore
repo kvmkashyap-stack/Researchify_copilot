@@ -16,5 +16,11 @@ node_modules/
 dist/
 build/
 
-# Local data dumps
 local_users.json
+venv/
+.venv/
+app/data/local_users.json
+app/data/local_messages.json
+app/data/session_titles.json
+uploads/
+
