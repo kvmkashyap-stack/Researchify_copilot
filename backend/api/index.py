@@ -31,6 +31,16 @@ try:
                     path_str = matched_path.decode("utf-8")
                     scope["path"] = path_str
                     scope["raw_path"] = path_str.encode("utf-8")
+            
+            # 2. Defensive check: Strip leading /api prefix if present in the final path
+            # (handles cases where frontend env is configured with or without the /api prefix)
+            if scope["path"].startswith("/api"):
+                # Avoid stripping our entrypoint index file itself
+                if not scope["path"].startswith("/api/index"):
+                    scope["path"] = scope["path"][4:]
+                    if not scope["path"]:
+                        scope["path"] = "/"
+                    scope["raw_path"] = scope["path"].encode("utf-8")
                 
         await fastapi_app(scope, receive, send)
 
