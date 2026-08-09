@@ -152,7 +152,7 @@ export default function LoginPage() {
         <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
       </Link>
 
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050505] px-6">
+      <main className="relative flex min-h-screen items-start justify-center overflow-hidden bg-[#050505] px-6 pt-[12vh] pb-12">
 
         {/* Background Glow */}
         <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[180px]" />
@@ -172,30 +172,26 @@ export default function LoginPage() {
             </h1>
 
             <p className="mt-3 text-gray-400 text-sm">
-              Sign in to AI Research Copilot
+              Sign in to continue your AI research journey
             </p>
           </div>
 
-          {/* Error Message */}
+          {/* Feedback Messages */}
           {errorMsg && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mb-4 text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3"
-            >
+            <div className="mb-4 text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3">
               {errorMsg}
-            </motion.div>
+            </div>
           )}
 
-          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+          <form className="space-y-5" onSubmit={handleLogin}>
 
             <div>
               <label className="mb-2 block text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Email
+                Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-5 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600" />
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@university.edu" className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-5 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600" />
               </div>
             </div>
 
@@ -239,7 +235,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleMockGoogleClick}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-4 font-semibold text-white transition hover:bg-white/10 hover:border-white/20 active:scale-[0.98]"
+              className="flex w-full h-[44px] items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 font-semibold text-white transition hover:bg-white/10 hover:border-white/20 active:scale-[0.98]"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
               Sign in with Google

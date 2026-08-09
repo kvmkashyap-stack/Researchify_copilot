@@ -210,7 +210,7 @@ export default function RegisterPage() {
         <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
       </Link>
 
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050505] px-6">
+      <main className="relative flex min-h-screen items-start justify-center overflow-hidden bg-[#050505] px-6 pt-[12vh] pb-12">
       
         {/* Background Glow */}
         <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/10 blur-[180px]" />
@@ -378,7 +378,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={handleMockGoogleClick}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-4 font-semibold text-white transition hover:bg-white/10 hover:border-white/20 active:scale-[0.98]"
+                  className="flex w-full h-[44px] items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 font-semibold text-white transition hover:bg-white/10 hover:border-white/20 active:scale-[0.98]"
                 >
                   <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
                   Sign up with Google
