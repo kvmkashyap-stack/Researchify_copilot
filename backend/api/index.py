@@ -20,13 +20,17 @@ try:
             
             # 1. Check if Vercel query parameter path overrides are injected
             if "path" in params and len(params["path"]) > 0:
-                scope["path"] = params["path"][0]
+                original_path = params["path"][0]
+                scope["path"] = original_path
+                scope["raw_path"] = original_path.encode("utf-8")
             else:
                 # Fallback: Intercept and fix path if x-matched-path is sent by Vercel
                 headers = dict(scope.get("headers", []))
                 matched_path = headers.get(b"x-matched-path")
                 if matched_path:
-                    scope["path"] = matched_path.decode("utf-8")
+                    path_str = matched_path.decode("utf-8")
+                    scope["path"] = path_str
+                    scope["raw_path"] = path_str.encode("utf-8")
                 
         await fastapi_app(scope, receive, send)
 
