@@ -219,8 +219,8 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:65px_65px]" />
 
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.7 }}
           className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-2xl"
         >
@@ -349,6 +349,14 @@ export default function RegisterPage() {
                   {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : "Verify & Sign Up"}
                 </button>
               </div>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleSendOtp({ preventDefault: () => {} } as React.FormEvent)}
+                className="text-sm text-cyan-400 hover:text-cyan-300 hover:underline transition mt-3 text-center w-full"
+              >
+                Didn't receive the code? Resend
+              </button>
             </form>
           )}
 

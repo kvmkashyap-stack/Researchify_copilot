@@ -92,10 +92,9 @@ app.include_router(
 # ==============================
 
 @app.get("/")
-def root(request: Request):
+def root():
     return {
-        "headers": dict(request.headers),
-        "scope": {k: str(v) for k, v in request.scope.items() if k not in ["app", "fastapi_ast"]}
+        "message": "AI Copilot Backend Running 🚀"
     }
 
 
