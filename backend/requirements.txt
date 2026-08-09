@@ -11,7 +11,5 @@ langchain-core
 langchain-groq
 langchain-community
 pypdf
-faiss-cpu
-sentence-transformers
 python-multipart
 httpx
