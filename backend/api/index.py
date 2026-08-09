@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from urllib.parse import parse_qs
 
 # Add the parent directory (backend root) to python path
 parent_dir = str(Path(__file__).resolve().parent.parent)
@@ -12,30 +11,12 @@ if parent_dir not in sys.path:
 try:
     from app.main import app as fastapi_app
     
-    # Expose custom ASGI wrapper to capture debug info and inspect Vercel path routing
+    # Expose custom ASGI wrapper to handle Vercel serverless prefix routing
     async def app(scope, receive, send):
         if scope["type"] == "http":
-            query_string = scope.get("query_string", b"").decode("utf-8")
-            params = parse_qs(query_string)
-            
-            # 1. Check if Vercel query parameter path overrides are injected
-            if "path" in params and len(params["path"]) > 0:
-                original_path = params["path"][0]
-                scope["path"] = original_path
-                scope["raw_path"] = original_path.encode("utf-8")
-            else:
-                # Fallback: Intercept and fix path if x-matched-path is sent by Vercel
-                headers = dict(scope.get("headers", []))
-                matched_path = headers.get(b"x-matched-path")
-                if matched_path:
-                    path_str = matched_path.decode("utf-8")
-                    scope["path"] = path_str
-                    scope["raw_path"] = path_str.encode("utf-8")
-            
-            # 2. Defensive check: Strip leading /api prefix if present in the final path
-            # (handles cases where frontend env is configured with or without the /api prefix)
+            # Strip leading /api prefix if present in the path (e.g. /api/auth/login -> /auth/login)
             if scope["path"].startswith("/api"):
-                # Avoid stripping our entrypoint index file itself
+                # Avoid stripping our entrypoint index file path itself
                 if not scope["path"].startswith("/api/index"):
                     scope["path"] = scope["path"][4:]
                     if not scope["path"]:
