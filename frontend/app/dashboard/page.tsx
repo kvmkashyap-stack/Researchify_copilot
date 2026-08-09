@@ -79,6 +79,8 @@ export default function DashboardPage() {
 
       if (res.ok) {
         const data = await res.json();
+        // Sync to localStorage
+        localStorage.setItem("chat_sessions", JSON.stringify(data));
         setSessions(data);
         if (data.length > 0 && currentSessionId === "default") {
           const hasDefault = data.some((s: { session_id: string }) => s.session_id === "default");
@@ -86,9 +88,18 @@ export default function DashboardPage() {
             setCurrentSessionId(data[0].session_id);
           }
         }
+      } else {
+        const local = localStorage.getItem("chat_sessions");
+        if (local) {
+          setSessions(JSON.parse(local));
+        }
       }
     } catch (err) {
       console.error("Failed to load chat sessions", err);
+      const local = localStorage.getItem("chat_sessions");
+      if (local) {
+        setSessions(JSON.parse(local));
+      }
     }
   };
 
@@ -111,10 +122,25 @@ export default function DashboardPage() {
           role: msg.role,
           content: msg.content,
         }));
+        // Sync to localStorage
+        localStorage.setItem(`chat_history_${sessionId}`, JSON.stringify(formatted));
         setMessages(formatted);
+      } else {
+        const local = localStorage.getItem(`chat_history_${sessionId}`);
+        if (local) {
+          setMessages(JSON.parse(local));
+        } else {
+          setMessages([]);
+        }
       }
     } catch (err) {
       console.error("Failed to load chat history", err);
+      const local = localStorage.getItem(`chat_history_${sessionId}`);
+      if (local) {
+        setMessages(JSON.parse(local));
+      } else {
+        setMessages([]);
+      }
     } finally {
       setIsLoadingHistory(false);
     }
@@ -144,48 +170,66 @@ export default function DashboardPage() {
   };
 
   const handleNewChat = () => {
-    const newSessionId = `session_${sessions.length + 1}_${messages.length + 1}`;
+    const newSessionId = `session_${Date.now()}`;
     setCurrentSessionId(newSessionId);
     setMessages([]);
-    setSessions((prev) => [
-      { session_id: newSessionId, title: "New Chat" },
-      ...prev,
-    ]);
+    setSessions((prev) => {
+      const updated = [
+        { session_id: newSessionId, title: "New Chat" },
+        ...prev,
+      ];
+      localStorage.setItem("chat_sessions", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this chat conversation?");
     if (!confirmDelete) return;
 
+    // Optimistic update
+    setSessions((prev) => {
+      const remaining = prev.filter((s) => s.session_id !== sessionId);
+      localStorage.setItem("chat_sessions", JSON.stringify(remaining));
+      return remaining;
+    });
+    localStorage.removeItem(`chat_history_${sessionId}`);
+
+    if (currentSessionId === sessionId) {
+      const remaining = sessions.filter((s) => s.session_id !== sessionId);
+      if (remaining.length > 0) {
+        setCurrentSessionId(remaining[0].session_id);
+      } else {
+        // Create an empty default session
+        const defSessionId = `session_${Date.now()}`;
+        setCurrentSessionId(defSessionId);
+        setMessages([]);
+        setSessions([{ session_id: defSessionId, title: "New Chat" }]);
+        localStorage.setItem("chat_sessions", JSON.stringify([{ session_id: defSessionId, title: "New Chat" }]));
+      }
+    }
+
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
+      await fetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}`, {
         method: "DELETE",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
         },
       });
-
-      if (res.ok) {
-        setSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
-        if (currentSessionId === sessionId) {
-          const remaining = sessions.filter((s) => s.session_id !== sessionId);
-          if (remaining.length > 0) {
-            setCurrentSessionId(remaining[0].session_id);
-          } else {
-            handleNewChat();
-          }
-        }
-      } else {
-        alert("Failed to delete conversation.");
-      }
     } catch (err) {
-      console.error(err);
-      alert("Error deleting conversation.");
+      console.error("Failed to delete session on backend", err);
     }
   };
 
   const handleRenameSession = async (sessionId: string, newTitle: string) => {
+    // Optimistic update
+    setSessions((prev) => {
+      const updated = prev.map((s) => s.session_id === sessionId ? { ...s, title: newTitle } : s);
+      localStorage.setItem("chat_sessions", JSON.stringify(updated));
+      return updated;
+    });
+
     try {
       const token = localStorage.getItem("access_token");
       const res = await fetch(`/api/chat/sessions/${encodeURIComponent(sessionId)}/rename`, {
@@ -196,15 +240,11 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({ title: newTitle }),
       });
-
       if (res.ok) {
         loadSessions();
-      } else {
-        alert("Failed to rename conversation.");
       }
     } catch (err) {
-      console.error(err);
-      alert("Error renaming conversation.");
+      console.error("Failed to rename session on backend", err);
     }
   };
 
@@ -266,21 +306,38 @@ export default function DashboardPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setMessages((m) => 
-          m.map((msg) => 
+        let finalMessages: ChatMessage[] = [];
+        setMessages((m) => {
+          const updated = m.map((msg) => 
             msg.id === thinkingId 
               ? { id: msg.id, role: "assistant", content: data.response }
               : msg
-          )
-        );
+          );
+          finalMessages = updated;
+          localStorage.setItem(`chat_history_${currentSessionId}`, JSON.stringify(updated));
+          return updated;
+        });
+
+        // Update titles optimistically
+        setSessions((prev) => {
+          let updated = [...prev];
+          const sessionIndex = updated.findIndex((s) => s.session_id === currentSessionId);
+          if (sessionIndex !== -1 && updated[sessionIndex].title === "New Chat") {
+            const displayTitle = text.slice(0, 40) + (text.length > 40 ? "..." : "");
+            updated[sessionIndex] = { ...updated[sessionIndex], title: displayTitle };
+          }
+          localStorage.setItem("chat_sessions", JSON.stringify(updated));
+          return updated;
+        });
+
         loadSessions();
       } else {
         throw new Error("Chat request failed");
       }
     } catch (err) {
       console.error(err);
-      setMessages((m) => 
-        m.map((msg) => 
+      setMessages((m) => {
+        const updated = m.map((msg) => 
           msg.id === thinkingId 
             ? { 
                 id: msg.id, 
@@ -288,8 +345,10 @@ export default function DashboardPage() {
                 content: "Error: I'm unable to connect to the agent right now. Please verify backend connectivity and try again." 
               }
             : msg
-        )
-      );
+        );
+        localStorage.setItem(`chat_history_${currentSessionId}`, JSON.stringify(updated));
+        return updated;
+      });
     } finally {
       setIsSending(false);
     }
