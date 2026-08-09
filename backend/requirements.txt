@@ -1,5 +1,5 @@
-fastapi
-uvicorn[standard]
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
 python-dotenv
 pydantic
 pydantic[email]
@@ -12,6 +12,5 @@ langchain-groq
 langchain-community
 pypdf
 faiss-cpu
-sentence-transformers
 python-multipart
 httpx
