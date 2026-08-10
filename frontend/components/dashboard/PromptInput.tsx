@@ -17,6 +17,7 @@ export default function PromptInput({
   const [uploading, setUploading] = useState(false);
   const [attachedFile, setAttachedFile] = useState<{ name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = () => {
     if (!prompt.trim() && !attachedFile) return;
@@ -31,6 +32,10 @@ export default function PromptInput({
     onSend(textToSend);
     setPrompt("");
     setAttachedFile(null);
+    
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   };
 
   const handlePlusClick = () => {
@@ -80,30 +85,29 @@ export default function PromptInput({
 
   const isDark = theme === 'dark';
 
+  const handleTextareaInput = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      className={`rounded-2xl border p-4 backdrop-blur-md transition-colors duration-300 ${
-        isDark 
-          ? 'border-white/10 bg-white/[0.03]' 
-          : 'border-slate-200 bg-white shadow-sm'
-      }`}
-    >
+    <div className="w-full">
       <AnimatePresence>
         {attachedFile && (
           <motion.div 
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold mb-3 border transition-all ${
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-semibold mb-2.5 border transition-all ${
               isDark 
                 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' 
                 : 'bg-cyan-50 text-cyan-700 border-cyan-100'
             }`}
           >
             <FileText className="h-3.5 w-3.5" />
-            <span className="truncate max-w-[220px]">{attachedFile.name}</span>
+            <span className="truncate max-w-[200px]">{attachedFile.name}</span>
             <button 
               type="button"
               onClick={() => setAttachedFile(null)}
@@ -117,66 +121,79 @@ export default function PromptInput({
         )}
       </AnimatePresence>
 
-      <textarea 
-        rows={3} 
-        value={prompt} 
-        onChange={(e) => setPrompt(e.target.value)} 
-        placeholder="Ask the assistant about your research, or upload a PDF to analyze..." 
-        className={`w-full resize-none bg-transparent outline-none text-sm transition-colors ${
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className={`relative flex items-end gap-2.5 rounded-2xl border px-3 py-2.5 backdrop-blur-md transition-all duration-300 ${
           isDark 
-            ? 'text-white placeholder:text-gray-500' 
-            : 'text-slate-800 placeholder:text-slate-400'
+            ? 'border-white/10 bg-white/[0.03] focus-within:border-cyan-500/40 focus-within:bg-[#0c0c0c]/80' 
+            : 'border-slate-200 bg-white shadow-sm focus-within:border-cyan-600/40 focus-within:shadow-md'
         }`}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit();
-          }
-        }}
-      />
+      >
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          accept=".pdf" 
+          className="hidden" 
+        />
 
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        accept=".pdf" 
-        className="hidden" 
-      />
-
-      <div className="mt-3 flex justify-between items-center">
+        {/* Plus Button for File Upload */}
         <button
           type="button"
           onClick={handlePlusClick}
           disabled={uploading}
-          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition disabled:opacity-50 ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50 ${
             isDark 
-              ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white' 
-              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white' 
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
           }`}
           title="Upload PDF to analyze"
         >
           {uploading ? (
-            <RefreshCw className={`h-5 w-5 animate-spin ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
+            <RefreshCw className="h-4 w-4 animate-spin text-cyan-400" />
           ) : (
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
           )}
         </button>
 
+        {/* Dynamic growing Textarea */}
+        <textarea 
+          ref={textareaRef}
+          rows={1} 
+          value={prompt} 
+          onChange={(e) => setPrompt(e.target.value)} 
+          onInput={handleTextareaInput}
+          placeholder="Ask the assistant, or upload PDF to analyze..." 
+          className={`w-full max-h-36 resize-none bg-transparent py-1.5 outline-none text-sm leading-normal transition-colors ${
+            isDark 
+              ? 'text-white placeholder:text-gray-500' 
+              : 'text-slate-800 placeholder:text-slate-400'
+          }`}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+        />
+
+        {/* Send Button */}
         <motion.button 
           whileTap={{ scale: 0.95 }} 
           whileHover={{ scale: 1.02 }} 
           onClick={handleSubmit} 
           disabled={uploading || (!prompt.trim() && !attachedFile)}
-          className={`flex h-10 w-10 items-center justify-center rounded-full transition disabled:opacity-50 ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50 ${
             isDark 
               ? 'bg-cyan-400 text-black hover:bg-cyan-300' 
               : 'bg-cyan-600 text-white hover:bg-cyan-700 disabled:hover:bg-cyan-600 shadow-sm shadow-cyan-600/10'
           }`}
           title="Send Message"
         >
-          <ArrowUp className="h-5 w-5" />
+          <ArrowUp className="h-4.5 w-4.5" />
         </motion.button>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
