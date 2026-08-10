@@ -124,9 +124,11 @@ def send_register_otp(email: str, password: str):
     try:
         send_otp_email(email, otp)
     except Exception as e:
-        logger.warning(f"Failed to send email OTP (Dev Mode Fallback). OTP for {email} is: {otp} | Error: {str(e)}")
-        # Allow dev testing even if email SMTP service is unconfigured
-        return {"message": "Verification OTP generated (Check server console if SMTP is unconfigured).", "email": email, "dev_otp": otp}
+        logger.error(f"Failed to send email OTP: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send verification email: {str(e)}",
+        )
 
     return {"message": "Verification OTP sent to email.", "email": email}
 

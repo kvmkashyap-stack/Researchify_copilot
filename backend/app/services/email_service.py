@@ -96,9 +96,12 @@ def send_otp_email(to_email: str, otp: str):
             print(f"[EMAIL] Attempting SMTP on port {port} to {to_email}...")
             if port == 465:
                 server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
+                server.ehlo()
             else:
                 server = smtplib.SMTP(smtp_host, port, timeout=10)
+                server.ehlo()
                 server.starttls()
+                server.ehlo()
 
             server.login(smtp_user, smtp_password)
             server.sendmail(smtp_sender, to_email, msg.as_string())

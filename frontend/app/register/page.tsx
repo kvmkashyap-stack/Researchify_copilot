@@ -36,7 +36,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      let data: { detail?: string; message?: string; dev_otp?: string } = {};
+      let data: { detail?: string; message?: string } = {};
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await res.json();
@@ -47,11 +47,7 @@ export default function RegisterPage() {
 
       if (res.ok) {
         setStep(2);
-        if (data.dev_otp) {
-          setSuccessMsg(`OTP Code generated: ${data.dev_otp} (Email sandbox fallback. Enter this code to verify.)`);
-        } else {
-          setSuccessMsg("Verification code sent! Please check your email inbox (and spam folder).");
-        }
+        setSuccessMsg("Verification code sent! Please check your email inbox (and spam folder).");
       } else {
         setErrorMsg(data.detail || "Failed to send verification code. Please check details and try again.");
       }
