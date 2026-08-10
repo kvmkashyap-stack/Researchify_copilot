@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Mail, Lock, ShieldCheck, RefreshCw } from "lucide-react";
+import { ArrowRight, Mail, Lock, ShieldCheck, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ export default function RegisterPage() {
   // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   
   // Flow State
@@ -182,13 +183,20 @@ export default function RegisterPage() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter secure password"
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-5 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-12 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
