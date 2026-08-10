@@ -121,10 +121,6 @@ def login_root(user: UserLogin):
     return login_user(email=user.email, password=user.password)
 
 
-@app.post("/google-login", response_model=TokenResponse)
-def google_login_root(request: GoogleLoginRequest):
-    return google_login_user(credential=request.credential)
-
 
 @app.post("/debug-echo")
 async def debug_echo(request: Request):
