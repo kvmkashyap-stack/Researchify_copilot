@@ -40,66 +40,139 @@ function parseInlineStyles(text: string, isDark: boolean) {
   });
 }
 
+type ParsedBlock = 
+  | { type: 'p'; text: string }
+  | { type: 'heading'; level: number; text: string }
+  | { type: 'ul'; items: string[] }
+  | { type: 'ol'; items: string[] }
+  | { type: 'spacer' };
+
 function renderContent(content: string, isDark: boolean) {
   const lines = content.split("\n");
+  const blocks: ParsedBlock[] = [];
   
-  return lines.map((line, idx) => {
+  let currentUl: string[] | null = null;
+  let currentOl: string[] | null = null;
+  
+  const flushLists = () => {
+    if (currentUl) {
+      blocks.push({ type: 'ul', items: currentUl });
+      currentUl = null;
+    }
+    if (currentOl) {
+      blocks.push({ type: 'ol', items: currentOl });
+      currentOl = null;
+    }
+  };
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
-    if (!trimmed) return <div key={idx} className="h-2" />; // Preserves blank line spacings
-
-    // Headings
+    
+    if (!trimmed) {
+      flushLists();
+      blocks.push({ type: 'spacer' });
+      continue;
+    }
+    
     if (trimmed.startsWith("### ")) {
-      return (
-        <h4 key={idx} className={`text-sm font-bold mt-5 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          {parseInlineStyles(trimmed.slice(4), isDark)}
-        </h4>
-      );
+      flushLists();
+      blocks.push({ type: 'heading', level: 3, text: trimmed.slice(4) });
+      continue;
     }
     if (trimmed.startsWith("## ")) {
-      return (
-        <h3 key={idx} className={`text-base font-bold mt-6 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          {parseInlineStyles(trimmed.slice(3), isDark)}
-        </h3>
-      );
+      flushLists();
+      blocks.push({ type: 'heading', level: 2, text: trimmed.slice(3) });
+      continue;
     }
     if (trimmed.startsWith("# ")) {
-      return (
-        <h2 key={idx} className={`text-lg font-black mt-7 mb-4 select-text ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          {parseInlineStyles(trimmed.slice(2), isDark)}
-        </h2>
-      );
+      flushLists();
+      blocks.push({ type: 'heading', level: 1, text: trimmed.slice(2) });
+      continue;
     }
-
-    // Bullet Lists
+    
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      if (currentOl) flushLists();
       const cleanLine = trimmed.replace(/^[-*]\s+/, "");
-      return (
-        <ul key={idx} className="list-disc pl-5 my-1.5">
-          <li className="text-sm leading-relaxed select-text">
-            {parseInlineStyles(cleanLine, isDark)}
-          </li>
-        </ul>
-      );
+      if (!currentUl) {
+        currentUl = [];
+      }
+      currentUl.push(cleanLine);
+      continue;
     }
-
-    // Numbered Lists
+    
     if (/^\d+\.\s+/.test(trimmed)) {
+      if (currentUl) flushLists();
       const cleanLine = trimmed.replace(/^\d+\.\s+/, "");
-      return (
-        <ol key={idx} className="list-decimal pl-5 my-1.5">
-          <li className="text-sm leading-relaxed select-text">
-            {parseInlineStyles(cleanLine, isDark)}
-          </li>
-        </ol>
-      );
+      if (!currentOl) {
+        currentOl = [];
+      }
+      currentOl.push(cleanLine);
+      continue;
     }
+    
+    // Normal paragraph
+    flushLists();
+    blocks.push({ type: 'p', text: trimmed });
+  }
+  
+  flushLists();
 
-    // Paragraph
-    return (
-      <p key={idx} className="text-sm leading-relaxed mb-2.5 last:mb-0 select-text">
-        {parseInlineStyles(trimmed, isDark)}
-      </p>
-    );
+  return blocks.map((block, idx) => {
+    switch (block.type) {
+      case 'spacer':
+        return <div key={idx} className="h-2" />;
+        
+      case 'heading':
+        if (block.level === 3) {
+          return (
+            <h4 key={idx} className={`text-sm font-bold mt-5 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              {parseInlineStyles(block.text, isDark)}
+            </h4>
+          );
+        }
+        if (block.level === 2) {
+          return (
+            <h3 key={idx} className={`text-base font-bold mt-6 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              {parseInlineStyles(block.text, isDark)}
+            </h3>
+          );
+        }
+        return (
+          <h2 key={idx} className={`text-lg font-black mt-7 mb-4 select-text ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            {parseInlineStyles(block.text, isDark)}
+          </h2>
+        );
+        
+      case 'ul':
+        return (
+          <ul key={idx} className="list-disc pl-5 space-y-1.5 my-3">
+            {block.items.map((item, itemIdx) => (
+              <li key={itemIdx} className="text-sm leading-relaxed select-text">
+                {parseInlineStyles(item, isDark)}
+              </li>
+            ))}
+          </ul>
+        );
+        
+      case 'ol':
+        return (
+          <ol key={idx} className="list-decimal pl-5 space-y-1.5 my-3">
+            {block.items.map((item, itemIdx) => (
+              <li key={itemIdx} className="text-sm leading-relaxed select-text">
+                {parseInlineStyles(item, isDark)}
+              </li>
+            ))}
+          </ol>
+        );
+        
+      case 'p':
+        return (
+          <p key={idx} className="text-sm leading-relaxed mb-2.5 last:mb-0 select-text">
+            {parseInlineStyles(block.text, isDark)}
+          </p>
+        );
+    }
   });
 }
 
