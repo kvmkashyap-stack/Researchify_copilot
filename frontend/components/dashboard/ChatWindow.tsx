@@ -41,73 +41,62 @@ function parseInlineStyles(text: string, isDark: boolean) {
 }
 
 function renderContent(content: string, isDark: boolean) {
-  // Split by double newlines to isolate blocks
-  const blocks = content.split(/\n\n+/);
+  const lines = content.split("\n");
   
-  return blocks.map((block, bIdx) => {
-    const trimmed = block.trim();
-    if (!trimmed) return null;
+  return lines.map((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <div key={idx} className="h-2" />; // Preserves blank line spacings
 
-    // Handle Headings (H1, H2, H3)
+    // Headings
     if (trimmed.startsWith("### ")) {
       return (
-        <h4 key={bIdx} className={`text-sm font-bold mt-4 mb-2 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+        <h4 key={idx} className={`text-sm font-bold mt-5 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
           {parseInlineStyles(trimmed.slice(4), isDark)}
         </h4>
       );
     }
     if (trimmed.startsWith("## ")) {
       return (
-        <h3 key={bIdx} className={`text-base font-bold mt-5 mb-2.5 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+        <h3 key={idx} className={`text-base font-bold mt-6 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
           {parseInlineStyles(trimmed.slice(3), isDark)}
         </h3>
       );
     }
     if (trimmed.startsWith("# ")) {
       return (
-        <h2 key={bIdx} className={`text-lg font-black mt-6 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <h2 key={idx} className={`text-lg font-black mt-7 mb-4 select-text ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {parseInlineStyles(trimmed.slice(2), isDark)}
         </h2>
       );
     }
 
-    // Handle bullet list blocks
+    // Bullet Lists
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-      const lines = trimmed.split("\n");
+      const cleanLine = trimmed.replace(/^[-*]\s+/, "");
       return (
-        <ul key={bIdx} className="list-disc pl-5 space-y-1.5 my-3">
-          {lines.map((line, lIdx) => {
-            const cleanLine = line.replace(/^[-*]\s+/, "");
-            return (
-              <li key={lIdx} className="text-sm leading-relaxed select-text">
-                {parseInlineStyles(cleanLine, isDark)}
-              </li>
-            );
-          })}
+        <ul key={idx} className="list-disc pl-5 my-1.5">
+          <li className="text-sm leading-relaxed select-text">
+            {parseInlineStyles(cleanLine, isDark)}
+          </li>
         </ul>
       );
     }
 
-    // Handle numbered list blocks
+    // Numbered Lists
     if (/^\d+\.\s+/.test(trimmed)) {
-      const lines = trimmed.split("\n");
+      const cleanLine = trimmed.replace(/^\d+\.\s+/, "");
       return (
-        <ol key={bIdx} className="list-decimal pl-5 space-y-1.5 my-3">
-          {lines.map((line, lIdx) => {
-            const cleanLine = line.replace(/^\d+\.\s+/, "");
-            return (
-              <li key={lIdx} className="text-sm leading-relaxed select-text">
-                {parseInlineStyles(cleanLine, isDark)}
-              </li>
-            );
-          })}
+        <ol key={idx} className="list-decimal pl-5 my-1.5">
+          <li className="text-sm leading-relaxed select-text">
+            {parseInlineStyles(cleanLine, isDark)}
+          </li>
         </ol>
       );
     }
 
-    // Default: Plain paragraph text block
+    // Paragraph
     return (
-      <p key={bIdx} className="text-sm leading-relaxed mb-3 last:mb-0 select-text">
+      <p key={idx} className="text-sm leading-relaxed mb-2.5 last:mb-0 select-text">
         {parseInlineStyles(trimmed, isDark)}
       </p>
     );
