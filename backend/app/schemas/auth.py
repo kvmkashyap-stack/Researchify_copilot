@@ -38,10 +38,4 @@ class VerifyOTPRequest(BaseModel):
     email: EmailStr
     otp: str
 
-
-# ==========================
-# Google Login Request
-# ==========================
-
-class GoogleLoginRequest(BaseModel):
-    credential: str
+

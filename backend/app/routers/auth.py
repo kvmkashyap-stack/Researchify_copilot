@@ -4,16 +4,14 @@ from app.schemas.auth import (
     UserRegister,
     UserLogin,
     TokenResponse,
-    VerifyOTPRequest,
-    GoogleLoginRequest
+    VerifyOTPRequest
 )
 
 from app.services.auth_service import (
     register_user,
     login_user,
     send_register_otp,
-    verify_register_otp,
-    google_login_user
+    verify_register_otp
 )
 
 router = APIRouter()
@@ -71,20 +69,4 @@ def login(
     return login_user(
         email=user.email,
         password=user.password
-    )
-
-
-# ==================================
-# Google Login
-# ==================================
-
-@router.post(
-    "/google-login",
-    response_model=TokenResponse
-)
-def google_login(
-    request: GoogleLoginRequest
-):
-    return google_login_user(
-        credential=request.credential
     )

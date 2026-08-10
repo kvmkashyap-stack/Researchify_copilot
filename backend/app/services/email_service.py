@@ -112,3 +112,4 @@ def send_otp_email(to_email: str, otp: str):
 
     print(f"[ERROR] All email delivery methods failed for {to_email}. Last error: {str(last_error)}")
     print("[INFO] OTP was printed to console above. User can check Vercel logs.")
+    raise RuntimeError(f"All email delivery methods failed. Last error: {str(last_error)}")

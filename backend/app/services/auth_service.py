@@ -173,7 +173,12 @@ def verify_register_otp(email: str, otp: str):
             ).execute()
             saved_successfully = True
         except Exception as e:
-            logger.warning(f"Supabase user insert failed, using local storage: {str(e)}")
+            logger.warning(f"Supabase user insert failed: {str(e)}")
+            if "VERCEL" in os.environ:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Database user registration failed (verify Row-Level Security / RLS policies): {str(e)}",
+                )
 
     if not saved_successfully:
         users = _get_local_users()
@@ -251,6 +256,11 @@ def login_user(email: str, password: str):
                 user = response.data[0]
         except Exception as e:
             logger.warning(f"Supabase login search failed: {str(e)}")
+            if "VERCEL" in os.environ:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Database login query failed: {str(e)}",
+                )
 
     # 2. Search Local JSON Fallback if not found in Supabase
     if not user:
@@ -288,75 +298,3 @@ def login_user(email: str, password: str):
         "user_email": user["email"]
     }
 
-
-def google_login_user(credential: str):
-    """
-    Verify a Google ID token, extract the user email,
-    auto-create account if it doesn't exist, and return a JWT.
-    """
-    import httpx
-
-    try:
-        resp = httpx.get(
-            f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}",
-            timeout=10,
-        )
-        if resp.status_code != 200:
-            logger.error(f"Google Token verification failed with status {resp.status_code}: {resp.text}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid Google credential",
-            )
-        payload = resp.json()
-    except Exception as e:
-        logger.error(f"Failed to reach Google tokeninfo endpoint: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Failed to verify Google credential: {str(e)}",
-        )
-
-    email = payload.get("email")
-    if not email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Google account has no email",
-        )
-
-    email = email.strip().lower()
-
-    # Client ID audience check (bypassed if empty in .env)
-    google_client_id = getattr(settings, "GOOGLE_CLIENT_ID", None)
-    if google_client_id:
-        aud = payload.get("aud", "")
-        if aud != google_client_id:
-            logger.warning(f"Google token audience mismatch: expected {google_client_id}, got {aud}")
-
-    saved_successfully = False
-    if supabase:
-        try:
-            existing = (
-                supabase.table("users").select("*").eq("email", email).execute()
-            )
-            if not existing.data:
-                dummy_hash = hash_password(credential[:32])
-                supabase.table("users").insert(
-                    {"email": email, "hashed_password": dummy_hash}
-                ).execute()
-            saved_successfully = True
-        except Exception as e:
-            logger.warning(f"Supabase google user save failed: {str(e)}")
-
-    if not saved_successfully:
-        user = _find_local_user(email)
-        if not user:
-            dummy_hash = hash_password(credential[:32])
-            users = _get_local_users()
-            users.append({"email": email, "hashed_password": dummy_hash})
-            _save_local_users(users)
-
-    token = create_access_token({"sub": email})
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user_email": email
-    }

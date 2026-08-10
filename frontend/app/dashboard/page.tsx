@@ -80,7 +80,7 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         const local = localStorage.getItem("chat_sessions");
-        const merged = [...data];
+        let merged = [...data];
 
         if (local) {
           const localSessions = JSON.parse(local);
@@ -89,6 +89,11 @@ export default function DashboardPage() {
               merged.push(ls);
             }
           });
+        }
+
+        // Initialize a default chat session if the list is empty
+        if (merged.length === 0) {
+          merged = [{ session_id: "default", title: "New Chat" }];
         }
 
         localStorage.setItem("chat_sessions", JSON.stringify(merged));
@@ -102,16 +107,22 @@ export default function DashboardPage() {
         }
       } else {
         const local = localStorage.getItem("chat_sessions");
-        if (local) {
-          setSessions(JSON.parse(local));
+        let localSessions = local ? JSON.parse(local) : [];
+        if (localSessions.length === 0) {
+          localSessions = [{ session_id: "default", title: "New Chat" }];
+          localStorage.setItem("chat_sessions", JSON.stringify(localSessions));
         }
+        setSessions(localSessions);
       }
     } catch (err) {
       console.error("Failed to load chat sessions", err);
       const local = localStorage.getItem("chat_sessions");
-      if (local) {
-        setSessions(JSON.parse(local));
+      let localSessions = local ? JSON.parse(local) : [];
+      if (localSessions.length === 0) {
+        localSessions = [{ session_id: "default", title: "New Chat" }];
+        localStorage.setItem("chat_sessions", JSON.stringify(localSessions));
       }
+      setSessions(localSessions);
     }
   };
 

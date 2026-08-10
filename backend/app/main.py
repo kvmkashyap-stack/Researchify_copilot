@@ -18,8 +18,8 @@ from app.routers.report import (
     router as report_router
 )
 
-from app.schemas.auth import UserRegister, UserLogin, TokenResponse, VerifyOTPRequest, GoogleLoginRequest
-from app.services.auth_service import register_user, login_user, send_register_otp, verify_register_otp, google_login_user
+from app.schemas.auth import UserRegister, UserLogin, TokenResponse, VerifyOTPRequest
+from app.services.auth_service import register_user, login_user, send_register_otp, verify_register_otp
 from fastapi import Request
 
 
