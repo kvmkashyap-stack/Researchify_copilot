@@ -12,6 +12,108 @@ type Message = {
   isThinking?: boolean;
 };
 
+// Simple, fast client-side markdown parsing function to avoid importing heavy libraries and to eliminate raw tags/hashtags
+function parseInlineStyles(text: string, isDark: boolean) {
+  // Regex to match **bold** and `code` inline elements
+  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className={`font-extrabold ${isDark ? 'text-cyan-400' : 'text-cyan-700'}`}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code 
+          key={index} 
+          className={`px-1.5 py-0.5 rounded text-xs font-mono ${
+            isDark ? 'bg-white/10 text-cyan-300' : 'bg-slate-100 text-cyan-700'
+          }`}
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
+function renderContent(content: string, isDark: boolean) {
+  // Split by double newlines to isolate blocks
+  const blocks = content.split(/\n\n+/);
+  
+  return blocks.map((block, bIdx) => {
+    const trimmed = block.trim();
+    if (!trimmed) return null;
+
+    // Handle Headings (H1, H2, H3)
+    if (trimmed.startsWith("### ")) {
+      return (
+        <h4 key={bIdx} className={`text-sm font-bold mt-4 mb-2 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          {parseInlineStyles(trimmed.slice(4), isDark)}
+        </h4>
+      );
+    }
+    if (trimmed.startsWith("## ")) {
+      return (
+        <h3 key={bIdx} className={`text-base font-bold mt-5 mb-2.5 select-text ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          {parseInlineStyles(trimmed.slice(3), isDark)}
+        </h3>
+      );
+    }
+    if (trimmed.startsWith("# ")) {
+      return (
+        <h2 key={bIdx} className={`text-lg font-black mt-6 mb-3 select-text ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          {parseInlineStyles(trimmed.slice(2), isDark)}
+        </h2>
+      );
+    }
+
+    // Handle bullet list blocks
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const lines = trimmed.split("\n");
+      return (
+        <ul key={bIdx} className="list-disc pl-5 space-y-1.5 my-3">
+          {lines.map((line, lIdx) => {
+            const cleanLine = line.replace(/^[-*]\s+/, "");
+            return (
+              <li key={lIdx} className="text-sm leading-relaxed select-text">
+                {parseInlineStyles(cleanLine, isDark)}
+              </li>
+            );
+          })}
+        </ul>
+      );
+    }
+
+    // Handle numbered list blocks
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const lines = trimmed.split("\n");
+      return (
+        <ol key={bIdx} className="list-decimal pl-5 space-y-1.5 my-3">
+          {lines.map((line, lIdx) => {
+            const cleanLine = line.replace(/^\d+\.\s+/, "");
+            return (
+              <li key={lIdx} className="text-sm leading-relaxed select-text">
+                {parseInlineStyles(cleanLine, isDark)}
+              </li>
+            );
+          })}
+        </ol>
+      );
+    }
+
+    // Default: Plain paragraph text block
+    return (
+      <p key={bIdx} className="text-sm leading-relaxed mb-3 last:mb-0 select-text">
+        {parseInlineStyles(trimmed, isDark)}
+      </p>
+    );
+  });
+}
+
 export default function ChatWindow({ 
   messages,
   theme = 'dark',
@@ -125,7 +227,9 @@ export default function ChatWindow({
                   </div>
                 </div>
               ) : (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                <div className="space-y-1">
+                  {renderContent(message.content, isDark)}
+                </div>
               )}
 
               {!message.isThinking && !isEditing && (

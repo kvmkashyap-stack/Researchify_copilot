@@ -375,6 +375,12 @@ export default function DashboardSidebar({
   function logout() {
     setMobileOpen(false);
     localStorage.removeItem("access_token");
+    // Clear chat-related local storage items to prevent history leaks between users
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("chat_")) {
+        localStorage.removeItem(key);
+      }
+    });
     router.push("/login");
   }
 

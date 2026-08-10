@@ -7,16 +7,43 @@ import PromptInput from "@/components/dashboard/PromptInput";
 import { useAppTheme } from "@/lib/hooks/useAppTheme";
 import { MessageSquare, Sparkles, Sun, Moon, BookOpen, FileText, Lightbulb, Search, ClipboardList } from "lucide-react";
 
+function decodeJwt(token: string): { sub?: string } | null {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+const getLocalStorageUserPrefix = () => {
+  if (typeof window === "undefined") return "";
+  const token = localStorage.getItem("access_token");
+  if (!token) return "";
+  const decoded = decodeJwt(token);
+  return decoded?.sub ? `${decoded.sub}_` : "";
+};
+
 export default function DashboardPage() {
   type ChatMessage = { id: number; role: string; content: string; isThinking?: boolean };
   
   const [sessions, setSessions] = useState<{ session_id: string; title: string }[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState("default");
+  const [currentSessionId, setCurrentSessionId] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const { theme, toggleTheme } = useAppTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const getSessionsKey = () => `chat_sessions_${getLocalStorageUserPrefix()}`;
+  const getHistoryKey = (sid: string) => `chat_history_${getLocalStorageUserPrefix()}${sid}`;
 
   const suggestions = [
     {
@@ -53,6 +80,7 @@ export default function DashboardPage() {
 
   // Helper to load sessions from the backend
   const loadSessions = async () => {
+    const sessionsKey = getSessionsKey();
     try {
       const token = localStorage.getItem("access_token");
       const res = await fetch("/api/chat/sessions", {
@@ -64,7 +92,7 @@ export default function DashboardPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const local = localStorage.getItem("chat_sessions");
+        const local = localStorage.getItem(sessionsKey);
         let merged = [...data];
 
         if (local) {
@@ -76,36 +104,48 @@ export default function DashboardPage() {
           });
         }
 
-        // Initialize a default chat session if the list is empty
+        // Initialize a new unique chat session if the list is empty
         if (merged.length === 0) {
-          merged = [{ session_id: "default", title: "New Chat" }];
-        }
-
-        localStorage.setItem("chat_sessions", JSON.stringify(merged));
-        setSessions(merged);
-        
-        if (merged.length > 0 && currentSessionId === "default") {
-          const hasDefault = merged.some((s: { session_id: string }) => s.session_id === "default");
-          if (!hasDefault) {
+          const newId = `session_${Date.now()}`;
+          merged = [{ session_id: newId, title: "New Chat" }];
+          setCurrentSessionId(newId);
+        } else {
+          // If currentSessionId is empty or not in merged list, select the first session
+          if (!currentSessionId || !merged.some(s => s.session_id === currentSessionId)) {
             setCurrentSessionId(merged[0].session_id);
           }
         }
+
+        localStorage.setItem(sessionsKey, JSON.stringify(merged));
+        setSessions(merged);
       } else {
-        const local = localStorage.getItem("chat_sessions");
+        const local = localStorage.getItem(sessionsKey);
         let localSessions = local ? JSON.parse(local) : [];
         if (localSessions.length === 0) {
-          localSessions = [{ session_id: "default", title: "New Chat" }];
-          localStorage.setItem("chat_sessions", JSON.stringify(localSessions));
+          const newId = `session_${Date.now()}`;
+          localSessions = [{ session_id: newId, title: "New Chat" }];
+          localStorage.setItem(sessionsKey, JSON.stringify(localSessions));
+          setCurrentSessionId(newId);
+        } else {
+          if (!currentSessionId) {
+            setCurrentSessionId(localSessions[0].session_id);
+          }
         }
         setSessions(localSessions);
       }
     } catch (err) {
       console.error("Failed to load chat sessions", err);
-      const local = localStorage.getItem("chat_sessions");
+      const local = localStorage.getItem(sessionsKey);
       let localSessions = local ? JSON.parse(local) : [];
       if (localSessions.length === 0) {
-        localSessions = [{ session_id: "default", title: "New Chat" }];
-        localStorage.setItem("chat_sessions", JSON.stringify(localSessions));
+        const newId = `session_${Date.now()}`;
+        localSessions = [{ session_id: newId, title: "New Chat" }];
+        localStorage.setItem(sessionsKey, JSON.stringify(localSessions));
+        setCurrentSessionId(newId);
+      } else {
+        if (!currentSessionId) {
+          setCurrentSessionId(localSessions[0].session_id);
+        }
       }
       setSessions(localSessions);
     }
@@ -113,7 +153,9 @@ export default function DashboardPage() {
 
   // Load chat history for the active session ID
   const loadHistory = async (sessionId: string) => {
+    if (!sessionId) return;
     setIsLoadingHistory(true);
+    const historyKey = getHistoryKey(sessionId);
     try {
       const token = localStorage.getItem("access_token");
       const res = await fetch(`/api/chat/history?session_id=${encodeURIComponent(sessionId)}`, {
@@ -131,10 +173,10 @@ export default function DashboardPage() {
           content: msg.content,
         }));
         // Sync to localStorage
-        localStorage.setItem(`chat_history_${sessionId}`, JSON.stringify(formatted));
+        localStorage.setItem(historyKey, JSON.stringify(formatted));
         setMessages(formatted);
       } else {
-        const local = localStorage.getItem(`chat_history_${sessionId}`);
+        const local = localStorage.getItem(historyKey);
         if (local) {
           setMessages(JSON.parse(local));
         } else {
@@ -143,7 +185,7 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error("Failed to load chat history", err);
-      const local = localStorage.getItem(`chat_history_${sessionId}`);
+      const local = localStorage.getItem(historyKey);
       if (local) {
         setMessages(JSON.parse(local));
       } else {
@@ -186,7 +228,7 @@ export default function DashboardPage() {
         { session_id: newSessionId, title: "New Chat" },
         ...prev,
       ];
-      localStorage.setItem("chat_sessions", JSON.stringify(updated));
+      localStorage.setItem(getSessionsKey(), JSON.stringify(updated));
       return updated;
     });
   };
@@ -195,13 +237,14 @@ export default function DashboardPage() {
     const confirmDelete = window.confirm("Are you sure you want to delete this chat conversation?");
     if (!confirmDelete) return;
 
+    const sessionsKey = getSessionsKey();
     // Optimistic update
     setSessions((prev) => {
       const remaining = prev.filter((s) => s.session_id !== sessionId);
-      localStorage.setItem("chat_sessions", JSON.stringify(remaining));
+      localStorage.setItem(sessionsKey, JSON.stringify(remaining));
       return remaining;
     });
-    localStorage.removeItem(`chat_history_${sessionId}`);
+    localStorage.removeItem(getHistoryKey(sessionId));
 
     if (currentSessionId === sessionId) {
       const remaining = sessions.filter((s) => s.session_id !== sessionId);
@@ -213,7 +256,7 @@ export default function DashboardPage() {
         setCurrentSessionId(defSessionId);
         setMessages([]);
         setSessions([{ session_id: defSessionId, title: "New Chat" }]);
-        localStorage.setItem("chat_sessions", JSON.stringify([{ session_id: defSessionId, title: "New Chat" }]));
+        localStorage.setItem(sessionsKey, JSON.stringify([{ session_id: defSessionId, title: "New Chat" }]));
       }
     }
 
@@ -231,10 +274,11 @@ export default function DashboardPage() {
   };
 
   const handleRenameSession = async (sessionId: string, newTitle: string) => {
+    const sessionsKey = getSessionsKey();
     // Optimistic update
     setSessions((prev) => {
       const updated = prev.map((s) => s.session_id === sessionId ? { ...s, title: newTitle } : s);
-      localStorage.setItem("chat_sessions", JSON.stringify(updated));
+      localStorage.setItem(sessionsKey, JSON.stringify(updated));
       return updated;
     });
 
@@ -320,7 +364,7 @@ export default function DashboardPage() {
               ? { id: msg.id, role: "assistant", content: data.response }
               : msg
           );
-          localStorage.setItem(`chat_history_${currentSessionId}`, JSON.stringify(updated));
+          localStorage.setItem(getHistoryKey(currentSessionId), JSON.stringify(updated));
           return updated;
         });
 
@@ -332,7 +376,7 @@ export default function DashboardPage() {
             const displayTitle = text.slice(0, 40) + (text.length > 40 ? "..." : "");
             updated[sessionIndex] = { ...updated[sessionIndex], title: displayTitle };
           }
-          localStorage.setItem("chat_sessions", JSON.stringify(updated));
+          localStorage.setItem(getSessionsKey(), JSON.stringify(updated));
           return updated;
         });
 

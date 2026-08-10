@@ -493,6 +493,12 @@ export default function DashboardHeader() {
                     <button
                       onClick={() => {
                         localStorage.removeItem("access_token");
+                        // Clear chat-related local storage items to prevent history leaks between users
+                        Object.keys(localStorage).forEach((key) => {
+                          if (key.startsWith("chat_")) {
+                            localStorage.removeItem(key);
+                          }
+                        });
                         router.push("/login");
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-red-400 transition hover:bg-red-500/10"
