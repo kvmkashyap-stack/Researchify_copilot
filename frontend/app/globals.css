@@ -97,7 +97,13 @@ body.light .bg-white\/10 {
 }
 
 /* Text color conversions */
-body.light .text-white,
+body.light h1.text-white,
+body.light h2.text-white,
+body.light h3.text-white,
+body.light h4.text-white,
+body.light p.text-white,
+body.light span.text-white,
+body.light div.text-white,
 body.light .text-white\/95,
 body.light .text-white\/90 {
   color: #0f172a !important;
