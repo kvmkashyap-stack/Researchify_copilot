@@ -5,8 +5,12 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/landing/Footer";
 import { motion } from "framer-motion";
 import { MessageSquare, FolderOpen, Brain, Search, Sparkles, BookOpen } from "lucide-react";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 export default function FeaturesPage() {
+  const { theme, toggleTheme } = useAppTheme();
+  const isDark = theme === "dark";
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
@@ -45,9 +49,11 @@ export default function FeaturesPage() {
   ];
 
   return (
-    <>
-      <Navbar />
-      <main className="relative min-h-screen overflow-hidden bg-[#050505] pt-32 px-6">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? "bg-[#050505] text-white" : "bg-[#f8fafc] text-slate-900"
+    }`}>
+      <Navbar theme={theme} onToggleTheme={toggleTheme} />
+      <main className="relative min-h-screen overflow-hidden pt-32 px-6">
         
         {/* Glow */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
@@ -62,10 +68,10 @@ export default function FeaturesPage() {
             <span className="text-xs uppercase tracking-[0.25em] text-cyan-400 font-bold bg-cyan-500/10 px-4 py-1.5 rounded-full">
               Capabilities
             </span>
-            <h1 className="text-4xl sm:text-6xl font-black text-white mt-6">
+            <h1 className={`text-4xl sm:text-6xl font-black mt-6 ${isDark ? "text-white" : "text-slate-900"}`}>
               Features
             </h1>
-            <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className={`mt-4 text-lg max-w-2xl mx-auto ${isDark ? "text-gray-400" : "text-slate-600"}`}>
               Everything you need to gather, synthesize, and organize academic and scientific intelligence in one modern interface.
             </p>
           </motion.div>
@@ -79,20 +85,24 @@ export default function FeaturesPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1, duration: 0.5 }}
-                  className="group rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition hover:-translate-y-2 hover:border-cyan-400/30 hover:bg-cyan-500/[0.02]"
+                  className={`group rounded-3xl border p-8 backdrop-blur-xl transition hover:-translate-y-2 ${
+                    isDark 
+                      ? "border-white/10 bg-white/5 hover:border-cyan-400/30 hover:bg-cyan-500/[0.02]" 
+                      : "border-slate-200 bg-white hover:border-cyan-500/30 hover:bg-cyan-500/[0.01] shadow-sm"
+                  }`}
                 >
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-black transition">
                     <Icon size={24} />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{f.title}</h3>
-                  <p className="text-gray-400 leading-relaxed text-sm">{f.description}</p>
+                  <h3 className={`text-xl font-bold mb-3 ${isDark ? "text-white" : "text-slate-800"}`}>{f.title}</h3>
+                  <p className={`leading-relaxed text-sm ${isDark ? "text-gray-400" : "text-slate-600"}`}>{f.description}</p>
                 </motion.div>
               );
             })}
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+      <Footer theme={theme} />
+    </div>
   );
 }

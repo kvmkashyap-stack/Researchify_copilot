@@ -16,8 +16,11 @@ import {
   User,
   ChevronDown,
   MessageSquare,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 const notifications = [
   {
@@ -81,6 +84,8 @@ const searchItems = [
 
 export default function DashboardHeader() {
   const router = useRouter();
+  const { theme, toggleTheme } = useAppTheme();
+  const isDark = theme === "dark";
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -389,6 +394,19 @@ export default function DashboardHeader() {
               Research Mode
             </span>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className={`p-3 rounded-2xl border transition ${
+              isDark 
+                ? 'border-white/10 bg-white/[0.03] text-gray-300 hover:bg-white/5' 
+                : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 shadow-sm'
+            }`}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
 
           {/* Profile */}
 

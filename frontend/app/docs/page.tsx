@@ -5,8 +5,12 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/landing/Footer";
 import { motion } from "framer-motion";
 import { FileUp, FileText, CheckCircle2 } from "lucide-react";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 export default function DocsPage() {
+  const { theme, toggleTheme } = useAppTheme();
+  const isDark = theme === "dark";
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
@@ -45,9 +49,11 @@ export default function DocsPage() {
   ];
 
   return (
-    <>
-      <Navbar />
-      <main className="relative min-h-screen bg-[#050505] pt-32 px-6 overflow-hidden">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? "bg-[#050505] text-white" : "bg-[#f8fafc] text-slate-900"
+    }`}>
+      <Navbar theme={theme} onToggleTheme={toggleTheme} />
+      <main className="relative pt-32 px-6 overflow-hidden">
         
         {/* Glow */}
         <div className="absolute top-20 right-1/4 w-[600px] h-[600px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
@@ -62,10 +68,10 @@ export default function DocsPage() {
             <span className="text-xs uppercase tracking-[0.25em] text-cyan-400 font-bold bg-cyan-500/10 px-4 py-1.5 rounded-full">
               User Documentation
             </span>
-            <h1 className="text-4xl sm:text-6xl font-black text-white mt-6">
+            <h1 className={`text-4xl sm:text-6xl font-black mt-6 ${isDark ? "text-white" : "text-slate-900"}`}>
               Platform & Document Guide
             </h1>
-            <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className={`mt-4 text-lg max-w-2xl mx-auto ${isDark ? "text-gray-400" : "text-slate-600"}`}>
               Learn how to utilize document queries, project organization, and hybrid research searches.
             </p>
           </motion.div>
@@ -79,15 +85,19 @@ export default function DocsPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.15, duration: 0.6 }}
-                  className="border border-white/5 bg-white/[0.02] p-8 rounded-3xl backdrop-blur-xl"
+                  className={`border p-8 rounded-3xl backdrop-blur-xl transition ${
+                    isDark 
+                      ? "border-white/5 bg-white/[0.02]" 
+                      : "border-slate-200 bg-white shadow-sm"
+                  }`}
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400 mb-6">
                     <Icon size={24} />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-4">{s.title}</h3>
+                  <h3 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-slate-800"}`}>{s.title}</h3>
                   <ul className="space-y-4">
                     {s.content.map((item, i) => (
-                      <li key={i} className="text-sm text-gray-400 leading-relaxed flex items-start gap-3">
+                      <li key={i} className={`text-sm leading-relaxed flex items-start gap-3 ${isDark ? "text-gray-400" : "text-slate-700"}`}>
                         <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-2 shrink-0"></span>
                         <span>{item}</span>
                       </li>
@@ -99,7 +109,7 @@ export default function DocsPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+      <Footer theme={theme} />
+    </div>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Mail, Lock, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Mail, Lock, RefreshCw, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
+  
+  const { theme, toggleTheme } = useAppTheme();
+  const isDark = theme === "dark";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,16 +53,31 @@ export default function LoginPage() {
   };
 
   return (
-    <>
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? "bg-[#050505] text-white" : "bg-[#f8fafc] text-slate-900"
+    }`}>
       {/* Top Left Logo */}
       <Link href="/" className="absolute left-8 top-8 z-50">
         <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
       </Link>
 
-      <main className="relative flex min-h-screen items-start justify-center overflow-hidden bg-[#050505] px-6 pt-[12vh] pb-12">
+      {/* Floating Theme Toggle */}
+      <button
+        onClick={toggleTheme}
+        className={`absolute right-8 top-8 z-50 p-2.5 rounded-full border transition-all ${
+          isDark 
+            ? 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white' 
+            : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 shadow-sm'
+        }`}
+        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+
+      <main className="relative flex min-h-screen items-start justify-center overflow-hidden px-6 pt-[12vh] pb-12">
 
         {/* Background Glow */}
-        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[180px]" />
+        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/5 blur-[180px]" />
 
         {/* Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:65px_65px]" />
@@ -67,13 +86,17 @@ export default function LoginPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7 }}
-          className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-2xl"
+          className={`relative z-10 w-full max-w-md rounded-3xl border p-8 backdrop-blur-2xl transition ${
+            isDark 
+              ? "border-white/10 bg-white/5" 
+              : "border-slate-200 bg-white shadow-sm"
+          }`}
         >
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-white">
+            <h1 className={`text-4xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
               Welcome Back
             </h1>
-            <p className="mt-3 text-gray-400 text-sm">
+            <p className={`mt-3 text-sm ${isDark ? "text-gray-400" : "text-slate-500"}`}>
               Sign in to continue your AI research journey
             </p>
           </div>
@@ -88,7 +111,7 @@ export default function LoginPage() {
           <form className="space-y-5" onSubmit={handleLogin}>
 
             <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+              <label className={`mb-2 block text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-slate-600"}`}>
                 Email Address
               </label>
               <div className="relative">
@@ -99,13 +122,17 @@ export default function LoginPage() {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   placeholder="name@university.edu" 
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-5 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600" 
+                  className={`w-full rounded-2xl border pl-12 pr-5 py-4 outline-none transition placeholder:text-gray-600 ${
+                    isDark 
+                      ? "border-white/10 bg-white/5 text-white focus:border-cyan-400/50" 
+                      : "border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-600/50"
+                  }`} 
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+              <label className={`mb-2 block text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-300" : "text-slate-600"}`}>
                 Password
               </label>
               <div className="relative">
@@ -116,12 +143,16 @@ export default function LoginPage() {
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   placeholder="Enter your password" 
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-12 py-4 text-white outline-none transition focus:border-cyan-400/50 placeholder:text-gray-600" 
+                  className={`w-full rounded-2xl border pl-12 pr-12 py-4 outline-none transition placeholder:text-gray-600 ${
+                    isDark 
+                      ? "border-white/10 bg-white/5 text-white focus:border-cyan-400/50" 
+                      : "border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-600/50"
+                  }`} 
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-500 transition"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -131,7 +162,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-4 font-semibold text-black transition hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold transition hover:scale-[1.02] disabled:opacity-50 disabled:scale-100 ${
+                isDark 
+                  ? "bg-white text-black" 
+                  : "bg-slate-900 text-white hover:bg-slate-800"
+              }`}
             >
               {loading ? (
                 <RefreshCw className="h-5 w-5 animate-spin" />
@@ -155,6 +190,6 @@ export default function LoginPage() {
         </motion.div>
 
       </main>
-    </>
+    </div>
   );
 }

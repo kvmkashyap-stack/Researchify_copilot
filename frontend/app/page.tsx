@@ -1,28 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/landing/Hero";
 import Footer from "@/components/landing/Footer";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 export default function Home() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  // Load theme on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as 'light' | 'dark';
-    if (savedTheme) {
-      setTimeout(() => {
-        setTheme(savedTheme);
-      }, 0);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem("theme", nextTheme);
-  };
+  const { theme, toggleTheme } = useAppTheme();
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${

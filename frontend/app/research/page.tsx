@@ -5,8 +5,12 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/landing/Footer";
 import { motion } from "framer-motion";
 import { Award, ShieldAlert, Zap, Layers } from "lucide-react";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 
 export default function ResearchPage() {
+  const { theme, toggleTheme } = useAppTheme();
+  const isDark = theme === "dark";
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
@@ -35,9 +39,11 @@ export default function ResearchPage() {
   ];
 
   return (
-    <>
-      <Navbar />
-      <main className="relative min-h-screen bg-[#050505] pt-32 px-6 overflow-hidden">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark ? "bg-[#050505] text-white" : "bg-[#f8fafc] text-slate-900"
+    }`}>
+      <Navbar theme={theme} onToggleTheme={toggleTheme} />
+      <main className="relative min-h-screen pt-32 px-6 overflow-hidden">
         
         {/* Glow */}
         <div className="absolute top-20 left-1/3 w-[600px] h-[600px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
@@ -52,10 +58,10 @@ export default function ResearchPage() {
             <span className="text-xs uppercase tracking-[0.25em] text-cyan-400 font-bold bg-cyan-500/10 px-4 py-1.5 rounded-full">
               Value Proposition
             </span>
-            <h1 className="text-4xl sm:text-6xl font-black text-white mt-6">
+            <h1 className={`text-4xl sm:text-6xl font-black mt-6 ${isDark ? "text-white" : "text-slate-900"}`}>
               Why Use AI Research Copilot?
             </h1>
-            <p className="mt-4 text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className={`mt-4 text-lg max-w-2xl mx-auto ${isDark ? "text-gray-400" : "text-slate-600"}`}>
               How the platform solves critical academic bottlenecks and empowers researchers to build trusted research faster.
             </p>
           </motion.div>
@@ -69,14 +75,18 @@ export default function ResearchPage() {
                   initial={{ opacity: 0, x: idx % 2 === 0 ? -40 : 40 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.15, duration: 0.6 }}
-                  className="flex flex-col sm:flex-row items-start gap-6 border border-white/5 bg-white/[0.02] p-8 rounded-3xl backdrop-blur-xl animate-fade-in"
+                  className={`flex flex-col sm:flex-row items-start gap-6 border p-8 rounded-3xl backdrop-blur-xl transition ${
+                    isDark 
+                      ? "border-white/5 bg-white/[0.02]" 
+                      : "border-slate-200 bg-white shadow-sm"
+                  }`}
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
                     <Icon size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{s.title}</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">{s.description}</p>
+                    <h3 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-slate-800"}`}>{s.title}</h3>
+                    <p className={`text-sm leading-relaxed ${isDark ? "text-gray-400" : "text-slate-600"}`}>{s.description}</p>
                   </div>
                 </motion.div>
               );
@@ -84,7 +94,7 @@ export default function ResearchPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+      <Footer theme={theme} />
+    </div>
   );
 }

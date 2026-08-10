@@ -42,3 +42,83 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* ==========================================================================
+   Global Light Mode Styling Overrides (applied when body has .light class)
+   ========================================================================== */
+
+body.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Scrollbar in Light Mode */
+body.light::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+body.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+body.light ::selection {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+/* Background Overrides */
+body.light .bg-black,
+body.light .bg-\[\#050505\],
+body.light .bg-\[\#0b0b0b\],
+body.light .bg-\[\#070707\],
+body.light .bg-\[\#161616\] {
+  background-color: #f8fafc !important;
+}
+
+/* Card, sidebar and panel backgrounds */
+body.light .bg-white\/5,
+body.light .bg-white\/\[0\.02\],
+body.light .bg-white\/\[0\.01\],
+body.light .bg-black\/30,
+body.light .bg-black\/40,
+body.light .bg-black\/50,
+body.light .bg-white\/\[0\.03\] {
+  background-color: #ffffff !important;
+}
+
+body.light .bg-white\/10 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Text color conversions */
+body.light .text-white,
+body.light .text-white\/95,
+body.light .text-white\/90 {
+  color: #0f172a !important;
+}
+
+body.light .text-gray-300,
+body.light .text-gray-400,
+body.light .text-gray-500 {
+  color: #475569 !important;
+}
+
+/* Border color overrides */
+body.light .border-white\/5,
+body.light .border-white\/10,
+body.light .border-white\/20 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Glow effects opacity reduction in light mode */
+body.light .bg-cyan-500\/5,
+body.light .bg-cyan-500\/10,
+body.light .bg-white\/10 {
+  background-color: #22d3ee08 !important;
+}

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ChatWindow from "@/components/dashboard/ChatWindow";
 import PromptInput from "@/components/dashboard/PromptInput";
+import { useAppTheme } from "@/lib/hooks/useAppTheme";
 import { MessageSquare, Sparkles, Sun, Moon, BookOpen, FileText, Lightbulb, Search, ClipboardList } from "lucide-react";
 
 export default function DashboardPage() {
@@ -14,7 +15,7 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const { theme, toggleTheme } = useAppTheme();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const suggestions = [
@@ -49,22 +50,6 @@ export default function DashboardPage() {
       icon: ClipboardList
     }
   ];
-
-  // Load theme from localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as 'light' | 'dark';
-    if (savedTheme) {
-      setTimeout(() => {
-        setTheme(savedTheme);
-      }, 0);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem("theme", nextTheme);
-  };
 
   // Helper to load sessions from the backend
   const loadSessions = async () => {
